@@ -1,67 +1,73 @@
 import java.util.*;
-import java.util.ArrayList;
 
-public class opti {
-    public static void main(String[] args){
-        Scanner scanner=new Scanner(System.in);
+public class Optimal {
+    static Scanner scanner = new Scanner(System.in);
 
-        System.out.println("Enter no of frames:");
-        int no_frames=scanner.nextInt();
-
-        System.out.println("Enter no of page references:");
-        int no_pagerf=scanner.nextInt();
-
-        System.out.println("Enter page reference string");
-        scanner.nextLine();
-        String input=scanner.nextLine();
-        String[] rfstring=input.split(" ");
-        if (rfstring.length!=no_pagerf){
-            System.out.println("no of references do not match");
-            scanner.close();
-            return;
-        }
-        ArrayList<Integer>frames=new ArrayList<>();
-        int pagefaults=0;
-
-        for(int i=0;i<no_pagerf;i++){
-            int page=Integer.parseInt(rfstring[i]);
-
-            if(!frames.contains(page)){
-                pagefaults++;
-                if(frames.size()<no_frames){
-                    frames.add(page);
-                }
-                else{
-                    int index=predictOptimal(frames,rfstring,i);
-                    frames.set(index,page);
-                }
-            }
-
-        }
-        System.out.println("no of pagefaults:"+pagefaults);
-
-        scanner.close();
-    }
-
-    private static int predictOptimal(ArrayList<Integer>frames,String[] rfStrings,int curr){
-        int farthest=-1;
-        int index=-1;
-        for(int i=0;i<frames.size();i++){
-            int frame=frames.get(i);
-            int j;
-            for( j=curr;j<rfStrings.length;j++){
-                if(frame==Integer.parseInt(rfStrings[j])){
-                    if(j>farthest){
-                        farthest=j;
-                        index=i;
+    private int predict(int pages[], HashSet<Integer> currentSet, int index) {
+        Iterator<Integer> it = currentSet.iterator();
+        int val = -1;
+        int farthestIndex = index - 1;
+        
+        while (it.hasNext()) {
+            int temp = it.next();
+            int i;
+            for (i = index; i < pages.length; i++) {
+                if (pages[i] == temp) {
+                    if (i > farthestIndex) {
+                        farthestIndex = i;
+                        val = temp;
                     }
                     break;
                 }
             }
-            if(j==rfStrings.length){
-                return i;
+            if (i == pages.length) 
+                return temp;
+        }
+        return val;
+    }
+
+    public void optimalImplementation(int pages[], int capacity) {
+        int pageFaults = 0;
+        HashMap<Integer, Integer> map = new HashMap<>();
+        HashSet<Integer> currentSet = new HashSet<>();
+
+        for (int i = 0; i < pages.length; i++) {
+            if (currentSet.size() < capacity) {
+                if (!currentSet.contains(pages[i])) {
+                    currentSet.add(pages[i]);
+                    pageFaults++;
+                }
+            } else {
+                if (!currentSet.contains(pages[i])) {
+                    int predictedElement = predict(pages, currentSet, i + 1);
+                    currentSet.remove(predictedElement);
+                    currentSet.add(pages[i]);
+                    pageFaults++;
+                }
             }
         }
-        return (index==-1)?0:index;
+
+        System.out.println("Page Faults: " + pageFaults);
+        int pageHits = pages.length - pageFaults;
+        System.out.println("Page Hits: " + pageHits);
+        System.out.println("Hit Ratio: " + pageHits + "/" + pages.length + " = " + (double) pageHits / pages.length);
+    }
+
+    public static void main(String[] args) {
+        int capacity, n, pages[];
+        Optimal optimal = new Optimal();
+
+        System.out.print("Enter capacity of page frame: ");
+        capacity = scanner.nextInt();
+        System.out.print("Enter number of page sequence: ");
+        n = scanner.nextInt();
+        pages = new int[n];
+
+        System.out.print("Enter values (space separated): ");
+        for (int i = 0; i < n; i++) {
+            pages[i] = scanner.nextInt();
+        }
+
+        optimal.optimalImplementation(pages, capacity);
     }
 }
